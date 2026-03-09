@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VolunteerHub — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0f1117; --cream: #f5f0e8; --gold: #c9a84c;
+      --rust: #b5451b; --sage: #4a6741; --white: #fdfcf9; --error: #c0392b;
+    }
+    body { font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; background: var(--ink); color: var(--ink); overflow: hidden; }
+
+    /* LEFT */
+    .left-panel {
+      width: 45%; background: var(--ink);
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 3.5rem 4rem; position: relative; overflow: hidden;
+    }
+    .left-panel::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 80% 50%, rgba(201,168,76,0.08), transparent 65%);
+      pointer-events: none;
+    }
+    .brand { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--cream); letter-spacing: -0.5px; }
+    .brand span { color: var(--gold); }
+    .brand-back { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
+    .back-arrow { width: 32px; height: 32px; border: 1px solid rgba(245,240,232,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--cream); font-size: 0.9rem; transition: all 0.2s; }
+    .back-arrow:hover { border-color: var(--gold); color: var(--gold); }
+    .panel-middle { position: relative; z-index: 1; }
+    .panel-quote { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 900; color: var(--cream); line-height: 1.15; margin-bottom: 1.5rem; }
+    .panel-quote em { color: var(--gold); font-style: italic; }
+    .panel-desc { font-size: 0.9rem; color: rgba(245,240,232,0.45); line-height: 1.75; font-weight: 300; max-width: 340px; }
+    .deco-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 3rem; }
+    .deco-cell { height: 8px; background: rgba(201,168,76,0.15); border-radius: 1px; animation: pulse 2s ease-in-out infinite; }
+    .deco-cell:nth-child(odd) { animation-delay: 0.3s; }
+    .deco-cell:nth-child(3n) { background: rgba(201,168,76,0.35); }
+    @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+    /* Redirect info box */
+    .redirect-info {
+      margin-top: 2rem; padding: 1rem 1.2rem;
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 6px; background: rgba(201,168,76,0.05);
+    }
+    .redirect-info p { font-size: 0.78rem; color: rgba(245,240,232,0.4); line-height: 1.6; }
+    .redirect-info strong { color: var(--gold); }
+
+    .panel-footer { font-size: 0.75rem; color: rgba(245,240,232,0.25); }
+
+    /* RIGHT */
+    .right-panel { flex: 1; background: var(--cream); display: flex; align-items: center; justify-content: center; padding: 3rem; }
+    .login-box { width: 100%; max-width: 420px; animation: slideIn 0.5s ease both; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+    .login-heading { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.4rem; }
+    .login-sub { font-size: 0.9rem; color: #666; margin-bottom: 2.5rem; font-weight: 300; }
+    .login-sub a { color: var(--rust); text-decoration: none; font-weight: 500; }
+
+    .role-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 1.5px solid rgba(15,17,23,0.15); border-radius: 3px; margin-bottom: 2rem; overflow: hidden; }
+    .role-btn { padding: 0.75rem 1rem; text-align: center; background: transparent; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.25s; color: #888; }
+    .role-btn.active { background: var(--ink); color: var(--cream); }
+
+    /* Credentials hint */
+    .cred-hint {
+      background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
+      padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.78rem;
+      color: #665a2a; margin-bottom: 1.4rem; line-height: 1.6;
+    }
+    .cred-hint strong { color: #9a7d1a; }
+
+    .form-group { margin-bottom: 1.4rem; }
+    label { display: block; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 0.5rem; color: #444; }
+    .input-wrap { position: relative; }
+    .input-wrap .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; pointer-events: none; color: #aaa; }
+    input[type="email"], input[type="password"] {
+      width: 100%; padding: 0.85rem 1rem 0.85rem 2.8rem;
+      border: 1.5px solid rgba(15,17,23,0.15); background: var(--white); color: var(--ink);
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; border-radius: 2px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+    .form-footer { display: flex; justify-content: flex-end; margin-top: -0.8rem; margin-bottom: 1.6rem; }
+    .form-footer a { font-size: 0.8rem; color: var(--rust); text-decoration: none; font-weight: 500; }
+    .form-footer a:hover { text-decoration: underline; }
+
+    .btn-login { width: 100%; padding: 1rem; background: var(--ink); color: var(--cream); border: none; border-radius: 2px; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s; }
+    .btn-login::after { content: ''; position: absolute; inset: 0; background: var(--gold); transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
+    .btn-login:hover::after { transform: scaleX(1); }
+    .btn-login span { position: relative; z-index: 1; }
+    .btn-login:active { transform: scale(0.99); }
+
+    .divider { display: flex; align-items: center; gap: 1rem; margin: 1.8rem 0; color: #bbb; font-size: 0.8rem; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(15,17,23,0.1); }
+
+    .quick-links { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; margin-bottom: 1.4rem; }
+    .quick-link {
+      padding: 0.6rem 0.5rem; text-align: center; border-radius: 4px;
+      font-size: 0.75rem; font-weight: 600; text-decoration: none;
+      border: 1px solid rgba(15,17,23,0.12); color: var(--ink);
+      transition: all 0.2s;
+    }
+    .quick-link:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); }
+
+    .register-link { text-align: center; font-size: 0.88rem; color: #666; }
+    .register-link a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 1.5px solid var(--gold); padding-bottom: 1px; }
+
+    .error-msg { display: none; background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.25); color: var(--error); padding: 0.8rem 1rem; border-radius: 2px; font-size: 0.85rem; margin-bottom: 1.2rem; }
+    .error-msg.show { display: block; animation: shake 0.4s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  </style>
+</head>
+<body>
+  <div class="left-panel">
+    <a href="index.html" class="brand-back">
+      <div class="back-arrow">←</div>
+      <div class="brand">Volunteer<span>Hub</span></div>
+    </a>
+    <div class="panel-middle">
+      <div class="panel-quote">Welcome<br/><em>back,</em><br/>changemaker.</div>
+      <p class="panel-desc">Your dashboard awaits. Manage events, assign volunteers, and track the impact your team is making every day.</p>
+      <div class="deco-grid">
+        <div class="deco-cell"></div><div class="deco-cell"></div>
+        <div class="deco-cell"></div><div class="deco-cell"></div>
+        <div class="deco-cell"></div><div class="deco-cell"></div>
+        <div class="deco-cell"></div><div class="deco-cell"></div>
+      </div>
+      <div class="redirect-info">
+        <p>
+          <strong>Admin</strong> → Redirects to Admin Panel<br/>
+          <strong>Volunteer</strong> → Redirects to Home Page<br/>
+          Demo: <strong>admin@hub.com / admin123</strong><br/>
+          Demo: <strong>vol@hub.com / vol123</strong>
+        </p>
+      </div>
+    </div>
+    <div class="panel-footer">© 2025 VolunteerHub · All rights reserved</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="login-box">
+      <h1 class="login-heading">Sign In</h1>
+      <p class="login-sub">New here? <a href="register.html">Create a volunteer account →</a></p>
+
+      <div class="role-toggle">
+        <button class="role-btn active" id="adminBtn" onclick="setRole(this,'admin')">🛡 Admin / Coordinator</button>
+        <button class="role-btn" id="volBtn" onclick="setRole(this,'volunteer')">🙋 Volunteer</button>
+      </div>
+
+      <div class="cred-hint" id="credHint">
+        <strong>Admin demo:</strong> admin@hub.com / admin123
+      </div>
+
+      <div class="error-msg" id="errorMsg">⚠ Invalid credentials. Please check your email and password.</div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <span class="icon">✉</span>
+          <input type="email" id="email" placeholder="you@example.com"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="icon">🔒</span>
+          <input type="password" id="password" placeholder="Enter your password"/>
+        </div>
+      </div>
+      <div class="form-footer"><a href="#">Forgot password?</a></div>
+
+      <button class="btn-login" id="loginBtn"><span>Sign In →</span></button>
+
+      <div class="divider">quick links</div>
+
+      <div class="quick-links">
+        <a href="index.html" class="quick-link">🏠 Home</a>
+        <a href="register.html" class="quick-link">📝 Register</a>
+        <a href="admin.html" class="quick-link">⚙ Admin</a>
+      </div>
+
+      <p class="register-link">Don't have an account? <a href="register.html">Register now</a></p>
+    </div>
+  </div>
+
+  <script>
+    let currentRole = 'admin';
+
+    const hints = {
+      admin: '<strong>Admin demo:</strong> admin@hub.com / admin123',
+      volunteer: '<strong>Volunteer demo:</strong> vol@hub.com / vol123'
+    };
+
+    function setRole(btn, role) {
+      currentRole = role;
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('credHint').innerHTML = hints[role];
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    function handleLogin() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const err      = document.getElementById('errorMsg');
+      err.classList.remove('show');
+
+      if (!email || !password) {
+        err.textContent = '⚠ Please enter both email and password.';
+        err.classList.add('show'); return;
+      }
+
+      const admins     = [{ email: 'admin@hub.com', pass: 'admin123' }];
+      const volunteers = [{ email: 'vol@hub.com',   pass: 'vol123'   }];
+
+      if (currentRole === 'admin') {
+        const match = admins.find(a => a.email === email && a.pass === password);
+        if (match) { window.location.href = 'admin.html'; return; }
+      } else {
+        const match = volunteers.find(v => v.email === email && v.pass === password);
+        if (match) { window.location.href = 'index.html'; return; }
+      }
+
+      err.textContent = '⚠ Invalid credentials. Please check your email and password.';
+      err.classList.add('show');
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    ['email','password'].forEach(id =>
+      document.getElementById(id).addEventListener('input', () =>
+        document.getElementById('errorMsg').classList.remove('show')
+      )
+    );
+  </script>
+</body>
+</html>

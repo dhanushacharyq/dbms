@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VolunteerHub — Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0f1117; --cream: #f5f0e8; --gold: #c9a84c;
+      --rust: #b5451b; --sage: #4a6741; --white: #fdfcf9;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      background: rgba(245,240,232,0.93);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(201,168,76,0.25);
+      transition: box-shadow 0.3s;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900;
+      color: var(--ink); letter-spacing: -0.5px; text-decoration: none;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-links { display: flex; gap: 2.2rem; align-items: center; }
+    .nav-links a {
+      text-decoration: none; color: var(--ink);
+      font-size: 0.9rem; font-weight: 500; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .btn-nav {
+      padding: 0.55rem 1.4rem; border: 1.5px solid var(--ink);
+      background: transparent; color: var(--ink); font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer; border-radius: 2px;
+      transition: all 0.25s; text-decoration: none; display: inline-block;
+    }
+    .btn-nav:hover { background: var(--ink); color: var(--cream); }
+    .btn-nav-admin {
+      padding: 0.55rem 1.4rem; border: 1.5px solid var(--gold);
+      background: transparent; color: var(--gold); font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 2px;
+      transition: all 0.25s; text-decoration: none; display: inline-block;
+    }
+    .btn-nav-admin:hover { background: var(--gold); color: var(--ink); }
+
+    /* HERO */
+    .hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; padding-top: 80px; overflow: hidden; }
+    .hero-left { display: flex; flex-direction: column; justify-content: center; padding: 6rem 4rem 6rem 6rem; position: relative; z-index: 2; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--rust); margin-bottom: 1.8rem;
+    }
+    .hero-tag::before { content: ''; display: block; width: 28px; height: 1.5px; background: var(--rust); }
+    h1 {
+      font-family: 'Playfair Display', serif; font-size: clamp(3rem, 5vw, 4.8rem);
+      font-weight: 900; line-height: 1.05; letter-spacing: -1px; margin-bottom: 1.6rem;
+    }
+    h1 em { font-style: italic; color: var(--gold); }
+    .hero-desc { font-size: 1.05rem; line-height: 1.75; color: #444; max-width: 460px; margin-bottom: 3rem; font-weight: 300; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-primary {
+      padding: 0.9rem 2.2rem; background: var(--ink); color: var(--cream);
+      border: none; border-radius: 2px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 500; cursor: pointer; text-decoration: none;
+      display: inline-block; position: relative; overflow: hidden; transition: all 0.25s;
+    }
+    .btn-primary::after { content: ''; position: absolute; inset: 0; background: var(--gold); transform: translateX(-101%); transition: transform 0.3s ease; }
+    .btn-primary:hover::after { transform: translateX(0); }
+    .btn-primary span { position: relative; z-index: 1; }
+
+    .btn-secondary {
+      padding: 0.9rem 2.2rem; background: transparent; color: var(--ink);
+      border: 1.5px solid var(--ink); border-radius: 2px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 500; cursor: pointer; text-decoration: none;
+      display: inline-block; transition: all 0.25s;
+    }
+    .btn-secondary:hover { background: var(--sage); color: var(--cream); border-color: var(--sage); }
+
+    .btn-outline-gold {
+      padding: 0.9rem 2.2rem; background: transparent; color: var(--gold);
+      border: 1.5px solid var(--gold); border-radius: 2px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 500; cursor: pointer; text-decoration: none;
+      display: inline-block; transition: all 0.25s;
+    }
+    .btn-outline-gold:hover { background: var(--gold); color: var(--ink); }
+
+    .hero-right { position: relative; overflow: hidden; background: var(--ink); }
+    .hero-right-inner { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2rem; padding: 3rem; }
+    .stat-block { text-align: center; color: var(--cream); animation: fadeUp 0.8s ease both; }
+    .stat-block:nth-child(2) { animation-delay: 0.15s; }
+    .stat-block:nth-child(3) { animation-delay: 0.3s; }
+    .stat-block:nth-child(4) { animation-delay: 0.45s; }
+    .stat-num { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 900; color: var(--gold); line-height: 1; margin-bottom: 0.3rem; }
+    .stat-label { font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(245,240,232,0.5); }
+    .hero-divider { width: 40px; height: 1px; background: rgba(201,168,76,0.3); margin: 0 auto; }
+    .corner-decor { position: absolute; top: 2rem; right: 2rem; width: 80px; height: 80px; border-top: 1.5px solid var(--gold); border-right: 1.5px solid var(--gold); opacity: 0.4; }
+    .corner-decor-bl { position: absolute; bottom: 2rem; left: 2rem; width: 80px; height: 80px; border-bottom: 1.5px solid var(--gold); border-left: 1.5px solid var(--gold); opacity: 0.4; }
+
+    /* FEATURES */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(15,17,23,0.1); border-bottom: 1px solid rgba(15,17,23,0.1); }
+    .feature-item { padding: 3.5rem 3rem; border-right: 1px solid rgba(15,17,23,0.1); transition: background 0.3s; }
+    .feature-item:last-child { border-right: none; }
+    .feature-item:hover { background: rgba(201,168,76,0.06); }
+    .feature-icon { font-size: 2rem; margin-bottom: 1.2rem; display: block; }
+    .feature-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.7rem; }
+    .feature-text { font-size: 0.9rem; line-height: 1.7; color: #555; font-weight: 300; }
+
+    /* EVENTS */
+    .events-section { padding: 7rem 6rem; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 3.5rem; }
+    .section-tag { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; display: block; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 900; line-height: 1.15; }
+    .events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; background: rgba(15,17,23,0.1); }
+    .event-card { background: var(--cream); padding: 2.5rem 2rem; transition: background 0.3s, transform 0.3s; text-decoration: none; color: inherit; display: block; }
+    .event-card:hover { background: var(--ink); color: var(--cream); transform: translateY(-3px); }
+    .event-card:hover .event-date { color: var(--gold); }
+    .event-card:hover .event-venue, .event-card:hover .event-meta { color: rgba(245,240,232,0.6); }
+    .event-date { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--rust); margin-bottom: 1rem; font-weight: 500; transition: color 0.3s; }
+    .event-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.7rem; line-height: 1.25; }
+    .event-venue { font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; font-weight: 300; transition: color 0.3s; }
+    .event-meta { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #888; transition: color 0.3s; }
+
+    /* ADMIN BANNER — NEW */
+    .admin-banner {
+      margin: 0 6rem 0; padding: 1.8rem 3rem;
+      background: linear-gradient(135deg, var(--ink) 0%, #1a1d27 100%);
+      border: 1px solid rgba(201,168,76,0.25);
+      display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+    }
+    .admin-banner-text h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: var(--cream); margin-bottom: 0.3rem; }
+    .admin-banner-text p { font-size: 0.85rem; color: rgba(245,240,232,0.45); font-weight: 300; }
+    .admin-banner-btns { display: flex; gap: 0.8rem; flex-shrink: 0; }
+
+    /* CTA */
+    .cta-section {
+      margin: 2rem 6rem 7rem; background: var(--ink); color: var(--cream);
+      padding: 5rem; display: grid; grid-template-columns: 1fr auto;
+      gap: 3rem; align-items: center; position: relative; overflow: hidden;
+    }
+    .cta-section::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(201,168,76,0.15), transparent 70%); }
+    .cta-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; line-height: 1.2; margin-bottom: 1rem; }
+    .cta-title em { color: var(--gold); font-style: italic; }
+    .cta-text { font-size: 0.95rem; color: rgba(245,240,232,0.65); font-weight: 300; line-height: 1.7; }
+    .cta-btns { display: flex; flex-direction: column; gap: 1rem; white-space: nowrap; }
+
+    /* FOOTER */
+    footer { background: #0a0b0e; color: rgba(245,240,232,0.4); padding: 3rem 6rem; display: flex; justify-content: space-between; align-items: center; }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: var(--cream); }
+    .footer-logo span { color: var(--gold); }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a { font-size: 0.8rem; color: rgba(245,240,232,0.4); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-text { font-size: 0.8rem; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-left > * { animation: fadeUp 0.7s ease both; }
+    .hero-left > *:nth-child(2) { animation-delay: 0.1s; }
+    .hero-left > *:nth-child(3) { animation-delay: 0.2s; }
+    .hero-left > *:nth-child(4) { animation-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+  <nav id="mainNav">
+    <a href="index.html" class="nav-logo">Volunteer<span>Hub</span></a>
+    <div class="nav-links">
+      <a href="#events">Events</a>
+      <a href="#about">About</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="btn-nav">Register</a>
+      <a href="admin.html" class="btn-nav-admin">⚙ Admin Panel</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Volunteer Management System</div>
+      <h1>Make a<br/><em>Difference</em><br/>Together</h1>
+      <p class="hero-desc">Connect passionate volunteers with meaningful events. Streamline scheduling, track attendance, and build a community that cares.</p>
+      <div class="hero-actions">
+        <a href="login.html" class="btn-primary"><span>Login to Dashboard</span></a>
+        <a href="register.html" class="btn-secondary">Register as Volunteer</a>
+        <a href="#events" class="btn-outline-gold">View Events</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="corner-decor"></div>
+      <div class="corner-decor-bl"></div>
+      <div class="hero-right-inner">
+        <div class="stat-block"><div class="stat-num" id="stat1">0</div><div class="stat-label">Active Volunteers</div></div>
+        <div class="hero-divider"></div>
+        <div class="stat-block"><div class="stat-num" id="stat2">0</div><div class="stat-label">Events This Year</div></div>
+        <div class="hero-divider"></div>
+        <div class="stat-block"><div class="stat-num" id="stat3">0</div><div class="stat-label">Hours Contributed</div></div>
+        <div class="hero-divider"></div>
+        <div class="stat-block"><div class="stat-num" id="stat4">0</div><div class="stat-label">Avg. Feedback Rating</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="features">
+    <div class="feature-item">
+      <span class="feature-icon">📋</span>
+      <div class="feature-title">Smart Scheduling</div>
+      <p class="feature-text">Assign volunteers to shifts and roles automatically based on availability and skill sets.</p>
+    </div>
+    <div class="feature-item">
+      <span class="feature-icon">📊</span>
+      <div class="feature-title">Attendance Tracking</div>
+      <p class="feature-text">Real-time check-in and attendance records for every event, shift, and assignment.</p>
+    </div>
+    <div class="feature-item">
+      <span class="feature-icon">⭐</span>
+      <div class="feature-title">Performance Reviews</div>
+      <p class="feature-text">Coordinators can provide feedback and ratings to recognize outstanding volunteer work.</p>
+    </div>
+  </div>
+
+  <!-- ADMIN QUICK ACCESS BANNER -->
+  <div class="admin-banner">
+    <div class="admin-banner-text">
+      <h3>⚙ Admin / Coordinator Panel</h3>
+      <p>Manage volunteers, events, roles, shifts, assignments, attendance and feedback from one place.</p>
+    </div>
+    <div class="admin-banner-btns">
+      <a href="admin.html" class="btn-primary"><span>Open Admin Panel →</span></a>
+      <a href="login.html" class="btn-outline-gold">Login First</a>
+    </div>
+  </div>
+
+  <section class="events-section" id="events">
+    <div class="section-header">
+      <div>
+        <span class="section-tag">Upcoming</span>
+        <h2 class="section-title">Events Open<br/>for Volunteers</h2>
+      </div>
+      <a href="admin.html" class="btn-secondary">See All Events</a>
+    </div>
+    <div class="events-grid">
+      <a class="event-card" href="admin.html">
+        <div class="event-date">May 12, 2025</div>
+        <div class="event-name">City Clean-Up Drive</div>
+        <div class="event-venue">📍 Riverside Park, Block C</div>
+        <div class="event-meta"><span>🕗 8:00 AM – 12:00 PM</span><span>👥 24 slots open</span></div>
+      </a>
+      <a class="event-card" href="admin.html">
+        <div class="event-date">May 18, 2025</div>
+        <div class="event-name">Youth Literacy Camp</div>
+        <div class="event-venue">📍 Community Hall, Sector 7</div>
+        <div class="event-meta"><span>🕗 9:00 AM – 5:00 PM</span><span>👥 12 slots open</span></div>
+      </a>
+      <a class="event-card" href="admin.html">
+        <div class="event-date">May 25, 2025</div>
+        <div class="event-name">Blood Donation Camp</div>
+        <div class="event-venue">📍 Civil Hospital, Main Gate</div>
+        <div class="event-meta"><span>🕗 10:00 AM – 4:00 PM</span><span>👥 8 slots open</span></div>
+      </a>
+    </div>
+  </section>
+
+  <div class="cta-section">
+    <div>
+      <div class="cta-title">Ready to <em>volunteer</em><br/>your time?</div>
+      <p class="cta-text">Join hundreds of dedicated volunteers making real change. Register today and get matched to events that fit your skills and schedule.</p>
+    </div>
+    <div class="cta-btns">
+      <a href="register.html" class="btn-primary"><span>Register as Volunteer</span></a>
+      <a href="login.html" class="btn-outline-gold">Login</a>
+      <a href="admin.html" class="btn-secondary">Admin Panel</a>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo">Volunteer<span>Hub</span></div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+      <a href="register.html">Register</a>
+      <a href="admin.html">Admin Panel</a>
+    </div>
+    <div class="footer-text">© 2025 VolunteerHub. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // Nav shadow on scroll
+    window.addEventListener('scroll', () => {
+      document.getElementById('mainNav').style.boxShadow =
+        window.scrollY > 10 ? '0 2px 20px rgba(15,17,23,0.08)' : 'none';
+    });
+
+    // Animated stat counters
+    function animateCount(id, target, suffix, decimals = 0, duration = 1800) {
+      const el = document.getElementById(id);
+      const start = performance.now();
+      const update = (now) => {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const val = target * eased;
+        el.textContent = decimals
+          ? val.toFixed(decimals) + suffix
+          : (val >= 1000 ? (val/1000).toFixed(1) + 'K' + suffix : Math.floor(val) + suffix);
+        if (p < 1) requestAnimationFrame(update);
+      };
+      requestAnimationFrame(update);
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        animateCount('stat1', 1240, '+');
+        animateCount('stat2', 86, '');
+        animateCount('stat3', 14000, '');
+        animateCount('stat4', 4.9, '★', 1);
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(document.querySelector('.hero-right'));
+
+    // Feature fade-in
+    const feats = document.querySelectorAll('.feature-item');
+    const fo = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.15 });
+    feats.forEach((f, i) => {
+      f.style.opacity = '0';
+      f.style.transform = 'translateY(18px)';
+      f.style.transition = `opacity 0.5s ease ${i * 0.12}s, transform 0.5s ease ${i * 0.12}s`;
+      fo.observe(f);
+    });
+  </script>
+</body>
+</html>
