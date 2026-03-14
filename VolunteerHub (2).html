@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VolunteerHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── RESET & ROOT ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0f1117; --cream: #f5f0e8; --gold: #c9a84c;
+      --rust: #b5451b; --sage: #4a6741; --white: #fdfcf9; --error: #c0392b;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; cursor: none; }
+    a, button, [onclick], select, input, textarea, label { cursor: none; }
+
+    /* ─── CUSTOM CURSOR ─────────────────────────────────────────────────── */
+    #cursor-dot {
+      position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none;
+      width: 8px; height: 8px; background: var(--gold);
+      border-radius: 50%; transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background 0.2s, opacity 0.2s;
+      mix-blend-mode: multiply;
+    }
+    #cursor-ring {
+      position: fixed; top: 0; left: 0; z-index: 99998; pointer-events: none;
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--gold);
+      border-radius: 50%; transform: translate(-50%, -50%);
+      transition: width 0.35s cubic-bezier(.23,1,.32,1),
+                  height 0.35s cubic-bezier(.23,1,.32,1),
+                  border-color 0.3s, opacity 0.3s, border-radius 0.3s;
+      opacity: 0.6;
+    }
+    #cursor-trail {
+      position: fixed; top: 0; left: 0; z-index: 99997; pointer-events: none;
+      width: 6px; height: 6px; background: rgba(201,168,76,0.35);
+      border-radius: 50%; transform: translate(-50%, -50%);
+      transition: left 0.12s ease, top 0.12s ease, opacity 0.4s;
+    }
+
+    /* hover states (applied via JS class) */
+    body.cursor-hover #cursor-dot   { width: 12px; height: 12px; background: var(--rust); }
+    body.cursor-hover #cursor-ring  { width: 52px; height: 52px; border-color: var(--rust); opacity: 0.4; }
+    body.cursor-click #cursor-dot   { width: 6px; height: 6px; background: var(--ink); }
+    body.cursor-click #cursor-ring  { width: 22px; height: 22px; border-color: var(--ink); opacity: 1; }
+    body.cursor-text  #cursor-ring  { width: 3px; height: 32px; border-radius: 2px; border-color: var(--ink); opacity: 0.5; }
+    body.cursor-text  #cursor-dot   { opacity: 0; }
+
+    /* ─── PAGE SYSTEM ───────────────────────────────────────────────────── */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: block; }
+    #page-login.active { display: flex; }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       HOME
+    ═══════════════════════════════════════════════════════════════════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      background: rgba(245,240,232,0.93); backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(201,168,76,0.25); transition: box-shadow 0.3s;
+    }
+    .nav-logo { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900; color:var(--ink); letter-spacing:-0.5px; text-decoration:none; }
+    .nav-logo span { color:var(--gold); }
+    .nav-links { display:flex; gap:2.2rem; align-items:center; }
+    .nav-links a { text-decoration:none; color:var(--ink); font-size:0.9rem; font-weight:500; transition:color 0.2s; }
+    .nav-links a:hover { color:var(--gold); }
+    .btn-nav { padding:0.55rem 1.4rem; border:1.5px solid var(--ink); background:transparent; color:var(--ink); font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; border-radius:2px; transition:all 0.25s; text-decoration:none; display:inline-block; }
+    .btn-nav:hover { background:var(--ink); color:var(--cream); }
+    .btn-nav-admin { padding:0.55rem 1.4rem; border:1.5px solid var(--gold); background:transparent; color:var(--gold); font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; border-radius:2px; transition:all 0.25s; text-decoration:none; display:inline-block; }
+    .btn-nav-admin:hover { background:var(--gold); color:var(--ink); }
+
+    .hero { min-height:100vh; display:flex; justify-content:center; align-items:center; padding-top:80px; }
+    .hero-left { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:6rem 4rem; max-width:700px; }
+    .hero-tag { display:inline-flex; align-items:center; gap:0.6rem; font-size:0.75rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--rust); margin-bottom:1.8rem; }
+    h1 { font-family:'Playfair Display',serif; font-size:clamp(3rem,5vw,4.8rem); font-weight:900; line-height:1.05; letter-spacing:-1px; margin-bottom:1.6rem; }
+    h1 em { font-style:italic; color:var(--gold); }
+    .hero-desc { font-size:1.05rem; line-height:1.75; color:#444; max-width:460px; margin-bottom:3rem; font-weight:300; }
+    .hero-actions { display:flex; flex-direction:column; gap:1rem; align-items:center; width:100%; }
+    .hero-actions .btn-primary, .hero-actions .btn-secondary, .hero-actions .btn-outline-gold { width:280px; text-align:center; }
+
+    .btn-primary { padding:0.9rem 2.2rem; background:var(--ink); color:var(--cream); border:none; border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:500; text-decoration:none; display:inline-block; position:relative; overflow:hidden; transition:all 0.25s; }
+    .btn-primary::after { content:''; position:absolute; inset:0; background:var(--gold); transform:translateX(-101%); transition:transform 0.3s ease; }
+    .btn-primary:hover::after { transform:translateX(0); }
+    .btn-primary span { position:relative; z-index:1; }
+    .btn-secondary { padding:0.9rem 2.2rem; background:transparent; color:var(--ink); border:1.5px solid var(--ink); border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:500; text-decoration:none; display:inline-block; transition:all 0.25s; }
+    .btn-secondary:hover { background:var(--sage); color:var(--cream); border-color:var(--sage); }
+    .btn-outline-gold { padding:0.9rem 2.2rem; background:transparent; color:var(--gold); border:1.5px solid var(--gold); border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:500; text-decoration:none; display:inline-block; transition:all 0.25s; }
+    .btn-outline-gold:hover { background:var(--gold); color:var(--ink); }
+
+    .features { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid rgba(15,17,23,0.1); border-bottom:1px solid rgba(15,17,23,0.1); }
+    .feature-item { padding:3.5rem 3rem; border-right:1px solid rgba(15,17,23,0.1); transition:background 0.3s; }
+    .feature-item:last-child { border-right:none; }
+    .feature-item:hover { background:rgba(201,168,76,0.06); }
+    .feature-icon { font-size:2rem; margin-bottom:1.2rem; display:block; }
+    .feature-title { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; margin-bottom:0.7rem; }
+    .feature-text { font-size:0.9rem; line-height:1.7; color:#555; font-weight:300; }
+
+    .events-section { padding:7rem 6rem; }
+    .section-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:3.5rem; }
+    .section-tag { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:0.8rem; display:block; }
+    .section-title { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:900; line-height:1.15; }
+    .events-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5px; background:rgba(15,17,23,0.1); }
+    .event-card { background:var(--cream); padding:2.5rem 2rem; transition:background 0.3s, transform 0.3s; text-decoration:none; color:inherit; display:block; }
+    .event-card:hover { background:var(--ink); color:var(--cream); transform:translateY(-3px); }
+    .event-card:hover .event-date { color:var(--gold); }
+    .event-card:hover .event-venue, .event-card:hover .event-meta { color:rgba(245,240,232,0.6); }
+    .event-date { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--rust); margin-bottom:1rem; font-weight:500; transition:color 0.3s; }
+    .event-name { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; margin-bottom:0.7rem; line-height:1.25; }
+    .event-venue { font-size:0.85rem; color:#666; margin-bottom:1.5rem; font-weight:300; transition:color 0.3s; }
+    .event-meta { display:flex; gap:1.5rem; font-size:0.8rem; color:#888; transition:color 0.3s; }
+
+    .admin-banner { margin:0 6rem; padding:1.8rem 3rem; background:linear-gradient(135deg,var(--ink) 0%,#1a1d27 100%); border:1px solid rgba(201,168,76,0.25); display:flex; align-items:center; justify-content:space-between; gap:2rem; }
+    .admin-banner-text h3 { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; color:var(--cream); margin-bottom:0.3rem; }
+    .admin-banner-text p { font-size:0.85rem; color:rgba(245,240,232,0.45); font-weight:300; }
+    .admin-banner-btns { display:flex; gap:0.8rem; flex-shrink:0; }
+
+    .cta-section { margin:2rem 6rem 7rem; background:var(--ink); color:var(--cream); padding:5rem; display:grid; grid-template-columns:1fr auto; gap:3rem; align-items:center; position:relative; overflow:hidden; }
+    .cta-section::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(201,168,76,0.15),transparent 70%); }
+    .cta-title { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; line-height:1.2; margin-bottom:1rem; }
+    .cta-title em { color:var(--gold); font-style:italic; }
+    .cta-text { font-size:0.95rem; color:rgba(245,240,232,0.65); font-weight:300; line-height:1.7; }
+    .cta-btns { display:flex; flex-direction:column; gap:1rem; white-space:nowrap; }
+
+    footer { background:#0a0b0e; color:rgba(245,240,232,0.4); padding:3rem 6rem; display:flex; justify-content:space-between; align-items:center; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; color:var(--cream); }
+    .footer-logo span { color:var(--gold); }
+    .footer-links { display:flex; gap:2rem; }
+    .footer-links a { font-size:0.8rem; color:rgba(245,240,232,0.4); text-decoration:none; transition:color 0.2s; }
+    .footer-links a:hover { color:var(--gold); }
+    .footer-text { font-size:0.8rem; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .hero-left > * { animation:fadeUp 0.7s ease both; }
+    .hero-left > *:nth-child(2){animation-delay:0.1s}
+    .hero-left > *:nth-child(3){animation-delay:0.2s}
+    .hero-left > *:nth-child(4){animation-delay:0.3s}
+
+    /* FEEDBACK MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(15,17,23,0.7); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
+    .modal-overlay.active { display:flex; }
+    .modal-box { background:var(--cream); width:100%; max-width:520px; padding:3rem; position:relative; animation:fadeUp 0.3s ease both; }
+    .modal-close { position:absolute; top:1.2rem; right:1.5rem; background:none; border:none; font-size:1.4rem; color:var(--ink); line-height:1; transition:color 0.2s; }
+    .modal-close:hover { color:var(--rust); }
+    .modal-tag { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:0.6rem; display:block; }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; margin-bottom:1.8rem; }
+    .modal .form-group { margin-bottom:1.2rem; }
+    .modal .form-group label { display:block; font-size:0.82rem; font-weight:500; margin-bottom:0.4rem; color:var(--ink); }
+    .modal .form-group select, .modal .form-group textarea { width:100%; padding:0.7rem 0.9rem; border:1.5px solid rgba(15,17,23,0.18); background:var(--white); font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--ink); border-radius:2px; outline:none; transition:border-color 0.2s; }
+    .modal .form-group select:focus, .modal .form-group textarea:focus { border-color:var(--gold); }
+    .modal .form-group textarea { resize:vertical; min-height:110px; }
+    .star-rating { display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:0.4rem; margin-top:0.3rem; }
+    .star-rating input { display:none; }
+    .star-rating label { font-size:1.6rem; color:rgba(15,17,23,0.2); transition:color 0.15s; user-select:none; }
+    .star-rating label:hover, .star-rating label:hover ~ label, .star-rating input:checked ~ label { color:var(--gold); }
+    .modal-submit { margin-top:1.6rem; width:100%; padding:0.9rem; background:var(--ink); color:var(--cream); border:none; border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:500; position:relative; overflow:hidden; transition:all 0.25s; }
+    .modal-submit::after { content:''; position:absolute; inset:0; background:var(--gold); transform:translateX(-101%); transition:transform 0.3s ease; }
+    .modal-submit:hover::after { transform:translateX(0); }
+    .modal-submit span { position:relative; z-index:1; }
+    .access-denied { text-align:center; padding:1rem 0; }
+    .access-denied .deny-icon { font-size:2.5rem; margin-bottom:1rem; display:block; }
+    .access-denied p { font-size:0.9rem; color:#666; font-weight:300; line-height:1.7; }
+    .access-denied strong { color:var(--rust); }
+    .feedback-success { display:none; text-align:center; padding:1rem 0; }
+    .feedback-success .fs-icon { font-size:2.5rem; margin-bottom:1rem; display:block; }
+    .feedback-success p { font-size:0.9rem; color:#555; font-weight:300; line-height:1.7; }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       LOGIN
+    ═══════════════════════════════════════════════════════════════════════ */
+    #page-login { background:var(--ink); min-height:100vh; }
+    .left-panel { width:45%; background:var(--ink); display:flex; flex-direction:column; justify-content:space-between; padding:3.5rem 4rem; position:relative; overflow:hidden; }
+    .left-panel::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 80% 50%,rgba(201,168,76,0.08),transparent 65%); pointer-events:none; }
+    .brand { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; color:var(--cream); letter-spacing:-0.5px; }
+    .brand span { color:var(--gold); }
+    .brand-back { display:flex; align-items:center; gap:1rem; text-decoration:none; }
+    .back-arrow { width:32px; height:32px; border:1px solid rgba(245,240,232,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--cream); font-size:0.9rem; transition:all 0.2s; }
+    .back-arrow:hover { border-color:var(--gold); color:var(--gold); }
+    .panel-middle { position:relative; z-index:1; }
+    .panel-quote { font-family:'Playfair Display',serif; font-size:2.6rem; font-weight:900; color:var(--cream); line-height:1.15; margin-bottom:1.5rem; }
+    .panel-quote em { color:var(--gold); font-style:italic; }
+    .panel-desc { font-size:0.9rem; color:rgba(245,240,232,0.45); line-height:1.75; font-weight:300; max-width:340px; }
+    .deco-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:3rem; }
+    .deco-cell { height:8px; background:rgba(201,168,76,0.15); border-radius:1px; animation:pulse 2s ease-in-out infinite; }
+    .deco-cell:nth-child(odd){animation-delay:0.3s}
+    .deco-cell:nth-child(3n){background:rgba(201,168,76,0.35)}
+    @keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+    .redirect-info { margin-top:2rem; padding:1rem 1.2rem; border:1px solid rgba(201,168,76,0.2); border-radius:6px; background:rgba(201,168,76,0.05); }
+    .redirect-info p { font-size:0.78rem; color:rgba(245,240,232,0.4); line-height:1.6; }
+    .redirect-info strong { color:var(--gold); }
+    .panel-footer { font-size:0.75rem; color:rgba(245,240,232,0.25); }
+
+    .right-panel { flex:1; background:var(--cream); display:flex; align-items:center; justify-content:center; padding:3rem; }
+    .login-box { width:100%; max-width:420px; animation:slideIn 0.5s ease both; }
+    @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    .login-heading { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; margin-bottom:0.4rem; }
+    .login-sub { font-size:0.9rem; color:#666; margin-bottom:2.5rem; font-weight:300; }
+    .login-sub a { color:var(--rust); text-decoration:none; font-weight:500; }
+    .role-toggle { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid rgba(15,17,23,0.15); border-radius:3px; margin-bottom:2rem; overflow:hidden; }
+    .role-btn { padding:0.75rem 1rem; text-align:center; background:transparent; border:none; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; transition:all 0.25s; color:#888; }
+    .role-btn.active { background:var(--ink); color:var(--cream); }
+    .cred-hint { background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:0.75rem 1rem; border-radius:4px; font-size:0.78rem; color:#665a2a; margin-bottom:1.4rem; line-height:1.6; }
+    .cred-hint strong { color:#9a7d1a; }
+    .form-group { margin-bottom:1.4rem; }
+    label { display:block; font-size:0.78rem; font-weight:500; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:0.5rem; color:#444; }
+    .input-wrap { position:relative; }
+    .input-wrap .icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:0.9rem; pointer-events:none; color:#aaa; }
+    input[type="email"], input[type="password"] { width:100%; padding:0.85rem 1rem 0.85rem 2.8rem; border:1.5px solid rgba(15,17,23,0.15); background:var(--white); color:var(--ink); font-family:'DM Sans',sans-serif; font-size:0.95rem; border-radius:2px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; }
+    input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.12); }
+    .form-footer { display:flex; justify-content:flex-end; margin-top:-0.8rem; margin-bottom:1.6rem; }
+    .form-footer a { font-size:0.8rem; color:var(--rust); text-decoration:none; font-weight:500; }
+    .form-footer a:hover { text-decoration:underline; }
+    .btn-login { width:100%; padding:1rem; background:var(--ink); color:var(--cream); border:none; border-radius:2px; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:500; position:relative; overflow:hidden; transition:transform 0.15s; }
+    .btn-login::after { content:''; position:absolute; inset:0; background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform 0.3s ease; }
+    .btn-login:hover::after { transform:scaleX(1); }
+    .btn-login span { position:relative; z-index:1; }
+    .btn-login:active { transform:scale(0.99); }
+    .divider { display:flex; align-items:center; gap:1rem; margin:1.8rem 0; color:#bbb; font-size:0.8rem; }
+    .divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(15,17,23,0.1); }
+    .quick-links { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.6rem; margin-bottom:1.4rem; }
+    .quick-link { padding:0.6rem 0.5rem; text-align:center; border-radius:4px; font-size:0.75rem; font-weight:600; text-decoration:none; border:1px solid rgba(15,17,23,0.12); color:var(--ink); transition:all 0.2s; }
+    .quick-link:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.06); }
+    .register-link { text-align:center; font-size:0.88rem; color:#666; }
+    .register-link a { color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1.5px solid var(--gold); padding-bottom:1px; }
+    .error-msg { display:none; background:rgba(192,57,43,0.08); border:1px solid rgba(192,57,43,0.25); color:var(--error); padding:0.8rem 1rem; border-radius:2px; font-size:0.85rem; margin-bottom:1.2rem; }
+    .error-msg.show { display:block; animation:shake 0.4s ease; }
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       REGISTER
+    ═══════════════════════════════════════════════════════════════════════ */
+    #page-register { background:var(--cream); color:var(--ink); }
+    .topbar { background:var(--ink); padding:1.1rem 4rem; display:flex; align-items:center; justify-content:space-between; }
+    .topbar .brand { font-size:1.4rem; }
+    .topbar-right { display:flex; align-items:center; gap:1.5rem; }
+    .topbar-link { font-size:0.85rem; color:rgba(245,240,232,0.55); text-decoration:none; transition:color 0.2s; }
+    .topbar-link:hover { color:var(--gold); }
+    .topbar-admin { font-size:0.8rem; font-weight:600; color:var(--gold); text-decoration:none; border:1px solid rgba(201,168,76,0.35); padding:0.35rem 0.9rem; border-radius:3px; transition:all 0.2s; }
+    .topbar-admin:hover { background:var(--gold); color:var(--ink); }
+    .page-wrap { max-width:960px; margin:0 auto; padding:4rem 2rem 6rem; }
+    .role-select-wrap { margin-bottom:2.5rem; }
+    .role-select-label { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:0.8rem; display:block; font-weight:500; }
+    .steps { display:flex; align-items:center; justify-content:center; margin-bottom:3.5rem; }
+    .step { display:flex; align-items:center; gap:0.6rem; font-size:0.78rem; font-weight:500; letter-spacing:0.5px; text-transform:uppercase; color:#aaa; transition:color 0.3s; }
+    .step.active { color:var(--ink); }
+    .step.done { color:var(--sage); }
+    .step-num { width:28px; height:28px; border-radius:50%; border:1.5px solid currentColor; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:600; transition:all 0.3s; }
+    .step.active .step-num { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+    .step.done .step-num { background:var(--sage); color:var(--cream); border-color:var(--sage); }
+    .step-line { width:60px; height:1px; background:rgba(15,17,23,0.15); margin:0 0.5rem; }
+    .form-card { background:var(--white); border:1px solid rgba(15,17,23,0.1); padding:3.5rem 4rem; position:relative; }
+    .form-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--gold),var(--rust)); }
+    .admin-stripe::before { background:linear-gradient(90deg,var(--gold),#8b5cf6)!important; }
+    .section-label { font-size:0.7rem; letter-spacing:2.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; font-weight:500; }
+    .section-title { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:900; margin-bottom:2.2rem; line-height:1.2; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; }
+    .full { grid-column:1/-1; }
+    .reg-label { display:block; font-size:0.78rem; font-weight:500; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:0.5rem; color:#555; }
+    .req { color:var(--rust); margin-left:2px; }
+    input[type="text"], input[type="tel"], input[type="date"], select, textarea { width:100%; padding:0.82rem 1rem 0.82rem 2.6rem; border:1.5px solid rgba(15,17,23,0.12); background:var(--cream); color:var(--ink); font-family:'DM Sans',sans-serif; font-size:0.93rem; border-radius:2px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; appearance:none; -webkit-appearance:none; }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity:0; position:absolute; right:0; width:100%; height:100%; }
+    input.no-icon, select, textarea { padding-left:1rem; }
+    textarea { resize:vertical; min-height:90px; line-height:1.6; }
+    input:focus, select:focus, textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.1); background:var(--white); }
+    .skills-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.7rem; margin-top:0.5rem; }
+    .skill-chip { padding:0.55rem 0.9rem; border:1.5px solid rgba(15,17,23,0.12); border-radius:2px; font-size:0.8rem; font-weight:500; transition:all 0.2s; background:var(--cream); user-select:none; text-align:center; }
+    .skill-chip:hover { border-color:var(--gold); }
+    .skill-chip.selected { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+    .avail-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:0.6rem; margin-top:0.5rem; }
+    .day-chip { padding:0.65rem 0.3rem; border:1.5px solid rgba(15,17,23,0.12); border-radius:2px; font-size:0.75rem; font-weight:500; text-align:center; transition:all 0.2s; background:var(--cream); user-select:none; }
+    .day-chip:hover { border-color:var(--gold); }
+    .day-chip.selected { background:var(--sage); color:var(--cream); border-color:var(--sage); }
+    .form-divider { border:none; border-top:1px solid rgba(15,17,23,0.08); margin:2.5rem 0; }
+    .form-actions { display:flex; gap:1rem; justify-content:flex-end; margin-top:2.5rem; align-items:center; }
+    .btn-cancel { padding:0.9rem 1.8rem; background:transparent; color:#666; border:1.5px solid rgba(15,17,23,0.15); border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; text-decoration:none; transition:all 0.2s; }
+    .btn-cancel:hover { border-color:var(--ink); color:var(--ink); }
+    .btn-submit { padding:0.9rem 2.5rem; background:var(--ink); color:var(--cream); border:none; border-radius:2px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:500; position:relative; overflow:hidden; transition:transform 0.15s; }
+    .btn-submit::after { content:''; position:absolute; inset:0; background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform 0.3s ease; }
+    .btn-submit:hover::after { transform:scaleX(1); }
+    .btn-submit span { position:relative; z-index:1; }
+    .btn-submit:active { transform:scale(0.99); }
+    .admin-badge { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(201,168,76,0.12); border:1px solid rgba(201,168,76,0.3); color:#7a5f10; font-size:0.78rem; font-weight:600; padding:0.4rem 0.9rem; border-radius:3px; margin-bottom:1.5rem; letter-spacing:0.5px; text-transform:uppercase; }
+    .success-box { display:none; text-align:center; padding:4rem 2rem; }
+    .success-icon { font-size:4rem; margin-bottom:1.5rem; display:block; }
+    .success-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; margin-bottom:1rem; }
+    .success-text { font-size:0.95rem; color:#666; max-width:380px; margin:0 auto 2rem; line-height:1.7; }
+    .success-actions { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+    .field-error { font-size:0.75rem; color:var(--error); margin-top:0.35rem; display:none; }
+    .strength-bar { height:3px; border-radius:2px; margin-top:0.5rem; background:rgba(15,17,23,0.08); overflow:hidden; }
+    .strength-fill { height:100%; width:0; border-radius:2px; transition:width 0.4s,background 0.4s; }
+    .strength-text { font-size:0.73rem; color:#aaa; margin-top:0.3rem; }
+    .terms-label { display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; text-transform:none; letter-spacing:0; }
+    .terms-label a { color:var(--gold); text-decoration:none; }
+
+    @media(max-width:700px) {
+      .two-col { grid-template-columns:1fr; }
+      .skills-grid { grid-template-columns:repeat(2,1fr); }
+      .avail-grid { grid-template-columns:repeat(4,1fr); }
+      .form-card { padding:2rem 1.5rem; }
+      .topbar, nav { padding:1rem 1.5rem; }
+      .left-panel { display:none; }
+      .events-section, .admin-banner, .cta-section, footer { padding-left:1.5rem; padding-right:1.5rem; }
+      .admin-banner, .cta-section { margin-left:0; margin-right:0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── CUSTOM CURSOR ──────────────────────────────────────────────────── -->
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+  <div id="cursor-trail"></div>
+
+  <!-- ════════════════════════════════════════════ HOME PAGE ════════════ -->
+  <div id="page-home" class="page active">
+    <nav id="mainNav">
+      <a class="nav-logo" onclick="nav('home')">Volunteer<span>Hub</span></a>
+      <div class="nav-links">
+        <a href="#events">Events</a>
+        <a onclick="openFeedbackModal(event)">Feedback</a>
+        <a onclick="nav('login')">Login</a>
+        <a onclick="nav('register')" class="btn-nav">Register</a>
+        <a href="admin.html" class="btn-nav-admin">⚙ Admin Panel</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-tag">Volunteer Management System</div>
+        <h1>Make a<br/><em>Difference</em><br/>Together</h1>
+        <p class="hero-desc">Connect passionate volunteers with meaningful events. Streamline scheduling, track attendance, and build a community that cares.</p>
+        <div class="hero-actions">
+          <a onclick="nav('login')" class="btn-primary"><span>Login to Dashboard</span></a>
+          <a onclick="nav('register')" class="btn-secondary">Register as Volunteer</a>
+          <a href="#events" class="btn-outline-gold">View Events</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="features">
+      <div class="feature-item"><span class="feature-icon">📋</span><div class="feature-title">Smart Scheduling</div><p class="feature-text">Assign volunteers to shifts and roles automatically based on availability and skill sets.</p></div>
+      <div class="feature-item"><span class="feature-icon">📊</span><div class="feature-title">Attendance Tracking</div><p class="feature-text">Real-time check-in and attendance records for every event, shift, and assignment.</p></div>
+      <div class="feature-item"><span class="feature-icon">⭐</span><div class="feature-title">Performance Reviews</div><p class="feature-text">Coordinators can provide feedback and ratings to recognize outstanding volunteer work.</p></div>
+    </div>
+
+    <div class="admin-banner">
+      <div class="admin-banner-text">
+        <h3>⚙ Admin / Coordinator Panel</h3>
+        <p>Manage volunteers, events, roles, shifts, assignments, attendance and feedback from one place.</p>
+      </div>
+      <div class="admin-banner-btns">
+        <a href="admin.html" class="btn-primary"><span>Open Admin Panel →</span></a>
+        <a onclick="nav('login')" class="btn-outline-gold">Login First</a>
+      </div>
+    </div>
+
+    <section class="events-section" id="events">
+      <div class="section-header">
+        <div><span class="section-tag">Upcoming</span><h2 class="section-title">Events Open<br/>for Volunteers</h2></div>
+        <a href="admin.html" class="btn-secondary">See All Events</a>
+      </div>
+      <div class="events-grid">
+        <a class="event-card" href="admin.html"><div class="event-date">May 12, 2025</div><div class="event-name">City Clean-Up Drive</div><div class="event-venue">📍 Riverside Park, Block C</div><div class="event-meta"><span>🕗 8:00 AM – 12:00 PM</span><span>👥 24 slots open</span></div></a>
+        <a class="event-card" href="admin.html"><div class="event-date">May 18, 2025</div><div class="event-name">Youth Literacy Camp</div><div class="event-venue">📍 Community Hall, Sector 7</div><div class="event-meta"><span>🕗 9:00 AM – 5:00 PM</span><span>👥 12 slots open</span></div></a>
+        <a class="event-card" href="admin.html"><div class="event-date">May 25, 2025</div><div class="event-name">Blood Donation Camp</div><div class="event-venue">📍 Civil Hospital, Main Gate</div><div class="event-meta"><span>🕗 10:00 AM – 4:00 PM</span><span>👥 8 slots open</span></div></a>
+      </div>
+    </section>
+
+    <div class="cta-section">
+      <div>
+        <div class="cta-title">Ready to make an <em>impact?</em></div>
+        <p class="cta-text">Join hundreds of volunteers already making a difference in their communities. Sign up today — it's free and takes less than 2 minutes.</p>
+      </div>
+      <div class="cta-btns">
+        <a onclick="nav('register')" class="btn-primary"><span>Join as Volunteer →</span></a>
+        <a onclick="nav('login')" class="btn-outline-gold">Sign In</a>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer-logo">Volunteer<span>Hub</span></div>
+      <div class="footer-links">
+        <a onclick="nav('home')">Home</a>
+        <a onclick="nav('login')">Login</a>
+        <a onclick="nav('register')">Register</a>
+        <a href="admin.html">Admin Panel</a>
+      </div>
+      <div class="footer-text">© 2025 VolunteerHub. All rights reserved.</div>
+    </footer>
+
+    <!-- FEEDBACK MODAL -->
+    <div class="modal-overlay" id="feedbackModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeFeedbackModal()">✕</button>
+        <div class="access-denied" id="accessDenied" style="display:none">
+          <span class="deny-icon">🔒</span>
+          <span class="modal-tag">Restricted Access</span>
+          <div class="modal-title">Access Denied</div>
+          <p>The <strong>Feedback</strong> feature is only available to <strong>Event Coordinators</strong> and <strong>Admins</strong>.<br/><br/>Volunteers are not permitted to submit feedback.</p>
+        </div>
+        <div id="feedbackFormWrap" class="modal">
+          <span class="modal-tag">Coordinator / Admin Only</span>
+          <div class="modal-title">Submit Feedback</div>
+          <div class="form-group"><label>Select Event</label><select class="no-icon"><option value="">— Choose an event —</option><option>City Clean-Up Drive (May 12)</option><option>Youth Literacy Camp (May 18)</option><option>Blood Donation Camp (May 25)</option></select></div>
+          <div class="form-group"><label>Select Volunteer</label><select class="no-icon"><option value="">— Choose a volunteer —</option><option>Alice Johnson</option><option>Bob Martinez</option><option>Carol Singh</option><option>David Lee</option></select></div>
+          <div class="form-group"><label>Rating</label>
+            <div class="star-rating">
+              <input type="radio" name="rating" id="s5" value="5"/><label for="s5">★</label>
+              <input type="radio" name="rating" id="s4" value="4"/><label for="s4">★</label>
+              <input type="radio" name="rating" id="s3" value="3"/><label for="s3">★</label>
+              <input type="radio" name="rating" id="s2" value="2"/><label for="s2">★</label>
+              <input type="radio" name="rating" id="s1" value="1"/><label for="s1">★</label>
+            </div>
+          </div>
+          <div class="form-group"><label>Feedback Comments</label><textarea class="no-icon" placeholder="Write your feedback about the volunteer's performance…"></textarea></div>
+          <button class="modal-submit" onclick="submitFeedback()"><span>Submit Feedback</span></button>
+        </div>
+        <div class="feedback-success" id="feedbackSuccess">
+          <span class="fs-icon">✅</span>
+          <span class="modal-tag">Submitted</span>
+          <div class="modal-title">Feedback Sent!</div>
+          <p>Your feedback has been recorded successfully.</p>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-home -->
+
+
+  <!-- ════════════════════════════════════════════ LOGIN PAGE ════════════ -->
+  <div id="page-login" class="page">
+    <div class="left-panel">
+      <a class="brand-back" onclick="nav('home')">
+        <div class="back-arrow">←</div>
+        <div class="brand">Volunteer<span>Hub</span></div>
+      </a>
+      <div class="panel-middle">
+        <div class="panel-quote">Welcome<br/><em>back,</em><br/>changemaker.</div>
+        <p class="panel-desc">Your dashboard awaits. Manage events, assign volunteers, and track the impact your team is making every day.</p>
+        <div class="deco-grid">
+          <div class="deco-cell"></div><div class="deco-cell"></div><div class="deco-cell"></div><div class="deco-cell"></div>
+          <div class="deco-cell"></div><div class="deco-cell"></div><div class="deco-cell"></div><div class="deco-cell"></div>
+        </div>
+        <div class="redirect-info">
+          <p>
+            <strong>Admin</strong> → Redirects to Admin Panel<br/>
+            <strong>Volunteer</strong> → Redirects to Home Page<br/>
+            Demo: <strong>admin@hub.com / admin123</strong><br/>
+            Demo: <strong>vol@hub.com / vol123</strong>
+          </p>
+        </div>
+      </div>
+      <div class="panel-footer">© 2025 VolunteerHub · All rights reserved</div>
+    </div>
+
+    <div class="right-panel">
+      <div class="login-box">
+        <h1 class="login-heading">Sign In</h1>
+        <p class="login-sub">New here? <a onclick="nav('register')">Create a volunteer account →</a></p>
+        <div class="role-toggle">
+          <button class="role-btn active" id="adminBtn" onclick="setRole(this,'admin')">🛡 Admin / Coordinator</button>
+          <button class="role-btn" id="volBtn" onclick="setRole(this,'volunteer')">🙋 Volunteer</button>
+        </div>
+        <div class="cred-hint" id="credHint"><strong>Admin demo:</strong> admin@hub.com / admin123</div>
+        <div class="error-msg" id="errorMsg">⚠ Invalid credentials. Please check your email and password.</div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <div class="input-wrap"><span class="icon">✉</span><input type="email" id="loginEmail" placeholder="you@example.com"/></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="loginPassword" placeholder="Enter your password"/></div>
+        </div>
+        <div class="form-footer"><a href="#">Forgot password?</a></div>
+        <button class="btn-login" id="loginBtn"><span>Sign In →</span></button>
+        <div class="divider">quick links</div>
+        <div class="quick-links">
+          <a class="quick-link" onclick="nav('home')">🏠 Home</a>
+          <a class="quick-link" onclick="nav('register')">📝 Register</a>
+          <a class="quick-link" href="admin.html">⚙ Admin</a>
+        </div>
+        <p class="register-link">Don't have an account? <a onclick="nav('register')">Register now</a></p>
+      </div>
+    </div>
+  </div><!-- /page-login -->
+
+
+  <!-- ════════════════════════════════════════════ REGISTER PAGE ════════ -->
+  <div id="page-register" class="page">
+    <div class="topbar">
+      <a class="brand" onclick="nav('home')">Volunteer<span>Hub</span></a>
+      <div class="topbar-right">
+        <a class="topbar-link" onclick="nav('login')">Already registered? Sign in →</a>
+        <a href="admin.html" class="topbar-admin">⚙ Admin Panel</a>
+      </div>
+    </div>
+
+    <div class="page-wrap">
+      <div class="role-select-wrap">
+        <span class="role-select-label">Register as</span>
+        <div class="role-toggle">
+          <button class="role-btn active" id="roleVolBtn" onclick="switchRegRole('volunteer', this)">🙋 Volunteer</button>
+          <button class="role-btn" id="roleAdminBtn" onclick="switchRegRole('admin', this)">🛡 Admin / Coordinator</button>
+        </div>
+      </div>
+
+      <!-- VOLUNTEER FORM -->
+      <div id="volunteerForm">
+        <div class="steps">
+          <div class="step active" id="step1-ind"><div class="step-num">1</div><span>Personal Info</span></div>
+          <div class="step-line"></div>
+          <div class="step" id="step2-ind"><div class="step-num">2</div><span>Skills &amp; Availability</span></div>
+          <div class="step-line"></div>
+          <div class="step" id="step3-ind"><div class="step-num">3</div><span>Account Setup</span></div>
+        </div>
+        <div class="form-card">
+          <!-- step 1 -->
+          <div id="vstep1">
+            <div class="section-label">Step 1 of 3</div>
+            <div class="section-title">Personal Information</div>
+            <div class="two-col">
+              <div><label class="reg-label">Full Name <span class="req">*</span></label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="v_name" placeholder="John Doe"/></div><div class="field-error" id="nameErr">Please enter your full name.</div></div>
+              <div><label class="reg-label">Phone Number <span class="req">*</span></label><div class="input-wrap"><span class="icon">📞</span><input type="tel" id="v_phone" placeholder="+91 555 000 0000"/></div><div class="field-error" id="phoneErr">Please enter a valid phone number.</div></div>
+              <div class="full"><label class="reg-label">Email Address <span class="req">*</span></label><div class="input-wrap"><span class="icon">✉</span><input type="email" id="v_email" placeholder="you@example.com"/></div><div class="field-error" id="emailErr">Please enter a valid email address.</div></div>
+              <div><label class="reg-label">Date of Birth</label><div class="input-wrap"><span class="icon">📅</span><input type="date" id="v_dob"/></div></div>
+              <div><label class="reg-label">City / Location</label><div class="input-wrap"><span class="icon">📍</span><input type="text" id="v_city" placeholder="Your city"/></div></div>
+              <div class="full"><label class="reg-label">Brief Bio / Motivation</label><textarea id="v_bio" class="no-icon" placeholder="Tell us why you want to volunteer..."></textarea></div>
+            </div>
+            <div class="form-actions">
+              <a class="btn-cancel" onclick="nav('home')">← Home</a>
+              <button class="btn-submit" onclick="goVStep(2)"><span>Next: Skills &amp; Availability →</span></button>
+            </div>
+          </div>
+          <!-- step 2 -->
+          <div id="vstep2" style="display:none">
+            <div class="section-label">Step 2 of 3</div>
+            <div class="section-title">Skills &amp; Availability</div>
+            <div style="margin-bottom:1.8rem">
+              <label class="reg-label">Select your Skills <span class="req">*</span></label>
+              <div class="skills-grid" id="skillsGrid">
+                <div class="skill-chip">🎤 Public Speaking</div><div class="skill-chip">🏥 First Aid</div>
+                <div class="skill-chip">💻 Tech / IT</div><div class="skill-chip">🎨 Design</div>
+                <div class="skill-chip">📷 Photography</div><div class="skill-chip">🍳 Cooking</div>
+                <div class="skill-chip">🚗 Driving</div><div class="skill-chip">📚 Teaching</div>
+                <div class="skill-chip">🌐 Translation</div><div class="skill-chip">🎵 Music</div>
+                <div class="skill-chip">⚽ Sports</div><div class="skill-chip">🔧 Logistics</div>
+              </div>
+              <div class="field-error" id="skillsErr">Please select at least one skill.</div>
+            </div>
+            <hr class="form-divider"/>
+            <div style="margin-bottom:1.8rem">
+              <label class="reg-label">Days Available</label>
+              <div class="avail-grid">
+                <div class="day-chip">Mon</div><div class="day-chip">Tue</div><div class="day-chip">Wed</div><div class="day-chip">Thu</div><div class="day-chip">Fri</div><div class="day-chip">Sat</div><div class="day-chip">Sun</div>
+              </div>
+            </div>
+            <div class="two-col">
+              <div><label class="reg-label">Preferred Time</label><select id="timeSlot" class="no-icon"><option value="">— Select —</option><option>Morning (6 AM – 12 PM)</option><option>Afternoon (12 PM – 5 PM)</option><option>Evening (5 PM – 9 PM)</option><option>Flexible</option></select></div>
+              <div><label class="reg-label">Experience Level</label><select id="experience" class="no-icon"><option value="">— Select —</option><option>First-time volunteer</option><option>Some experience (1–3 events)</option><option>Experienced (3+ events)</option></select></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" onclick="goVStep(1)">← Back</button>
+              <button class="btn-submit" onclick="goVStep(3)"><span>Next: Account Setup →</span></button>
+            </div>
+          </div>
+          <!-- step 3 -->
+          <div id="vstep3" style="display:none">
+            <div class="section-label">Step 3 of 3</div>
+            <div class="section-title">Create Your Account</div>
+            <div class="two-col">
+              <div class="full"><label class="reg-label">Email Address <span class="req">*</span></label><div class="input-wrap"><span class="icon">✉</span><input type="email" id="v_emailConfirm" placeholder="Confirm your email"/></div><div class="field-error" id="emailConfirmErr">Email does not match.</div></div>
+              <div><label class="reg-label">Password <span class="req">*</span></label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="v_password" placeholder="Create a password"/></div><div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div><div class="strength-text" id="strengthText">Enter a password</div><div class="field-error" id="passErr">Password must be at least 8 characters.</div></div>
+              <div><label class="reg-label">Confirm Password <span class="req">*</span></label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="v_password2" placeholder="Repeat password"/></div><div class="field-error" id="pass2Err">Passwords do not match.</div></div>
+            </div>
+            <hr class="form-divider"/>
+            <div style="margin-bottom:1rem">
+              <label class="terms-label"><input type="checkbox" id="v_terms" style="width:16px;height:16px;accent-color:var(--ink)"/> I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+              <div class="field-error" id="termsErr">You must agree to the terms.</div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" onclick="goVStep(2)">← Back</button>
+              <button class="btn-submit" onclick="submitVol()"><span>Complete Registration →</span></button>
+            </div>
+          </div>
+          <!-- vol success -->
+          <div class="success-box" id="volSuccessBox">
+            <span class="success-icon">🎉</span>
+            <div class="success-title">You're Registered!</div>
+            <p class="success-text">Welcome to VolunteerHub! Your volunteer account has been created. You can now log in and explore upcoming events.</p>
+            <div class="success-actions">
+              <a class="btn-submit" onclick="nav('login')" style="text-decoration:none"><span>Go to Login →</span></a>
+              <a class="btn-cancel" onclick="nav('home')">← Home</a>
+            </div>
+          </div>
+        </div>
+      </div><!-- /volunteerForm -->
+
+      <!-- ADMIN FORM -->
+      <div id="adminRegForm" style="display:none">
+        <div class="steps">
+          <div class="step active" id="astep1-ind"><div class="step-num">1</div><span>Admin Info</span></div>
+          <div class="step-line"></div>
+          <div class="step" id="astep2-ind"><div class="step-num">2</div><span>Organisation</span></div>
+          <div class="step-line"></div>
+          <div class="step" id="astep3-ind"><div class="step-num">3</div><span>Account Setup</span></div>
+        </div>
+        <div class="form-card admin-stripe">
+          <!-- astep1 -->
+          <div id="astep1">
+            <div class="admin-badge">🛡 Admin / Coordinator Registration</div>
+            <div class="section-label">Step 1 of 3</div>
+            <div class="section-title">Admin Information</div>
+            <div class="two-col">
+              <div><label class="reg-label">Full Name <span class="req">*</span></label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="a_name" placeholder="Jane Smith"/></div><div class="field-error" id="a_nameErr">Please enter your full name.</div></div>
+              <div><label class="reg-label">Phone Number <span class="req">*</span></label><div class="input-wrap"><span class="icon">📞</span><input type="tel" id="a_phone" placeholder="+91 555 000 0000"/></div><div class="field-error" id="a_phoneErr">Please enter a valid phone number.</div></div>
+              <div class="full"><label class="reg-label">Official Email <span class="req">*</span></label><div class="input-wrap"><span class="icon">✉</span><input type="email" id="a_email" placeholder="admin@organisation.com"/></div><div class="field-error" id="a_emailErr">Please enter a valid email address.</div></div>
+              <div><label class="reg-label">Designation <span class="req">*</span></label><div class="input-wrap"><span class="icon">🏷</span><input type="text" id="a_designation" placeholder="e.g. Event Coordinator"/></div><div class="field-error" id="a_designationErr">Please enter your designation.</div></div>
+              <div><label class="reg-label">Date of Birth</label><div class="input-wrap"><span class="icon">📅</span><input type="date" id="a_dob"/></div></div>
+              <div class="full"><label class="reg-label">Brief Introduction</label><textarea id="a_bio" class="no-icon" placeholder="Tell us about your role and responsibilities..."></textarea></div>
+            </div>
+            <div class="form-actions">
+              <a class="btn-cancel" onclick="nav('home')">← Home</a>
+              <button class="btn-submit" onclick="goAStep(2)"><span>Next: Organisation →</span></button>
+            </div>
+          </div>
+          <!-- astep2 -->
+          <div id="astep2" style="display:none">
+            <div class="admin-badge">🛡 Admin / Coordinator Registration</div>
+            <div class="section-label">Step 2 of 3</div>
+            <div class="section-title">Organisation Details</div>
+            <div class="two-col">
+              <div class="full"><label class="reg-label">Organisation Name <span class="req">*</span></label><div class="input-wrap"><span class="icon">🏢</span><input type="text" id="a_org" placeholder="e.g. City Volunteer Network"/></div><div class="field-error" id="a_orgErr">Please enter your organisation name.</div></div>
+              <div><label class="reg-label">Organisation Type <span class="req">*</span></label><select id="a_orgType" class="no-icon"><option value="">— Select —</option><option>NGO / Non-Profit</option><option>Government Body</option><option>Educational Institution</option><option>Corporate CSR</option><option>Community Group</option><option>Other</option></select><div class="field-error" id="a_orgTypeErr">Please select organisation type.</div></div>
+              <div><label class="reg-label">City <span class="req">*</span></label><div class="input-wrap"><span class="icon">📍</span><input type="text" id="a_city" placeholder="Your city"/></div><div class="field-error" id="a_cityErr">Please enter your city.</div></div>
+              <div class="full"><label class="reg-label">Website / Social Link</label><div class="input-wrap"><span class="icon">🌐</span><input type="text" id="a_website" placeholder="https://yourorganisation.com"/></div></div>
+              <div class="full"><label class="reg-label">Admin Access Code <span class="req">*</span></label><div class="input-wrap"><span class="icon">🔑</span><input type="password" id="a_code" placeholder="Enter the admin access code"/></div><div class="field-error" id="a_codeErr">Please enter a valid admin access code.</div><div style="font-size:0.75rem;color:#888;margin-top:0.4rem">Demo code: <strong>ADMHUB2025</strong></div></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" onclick="goAStep(1)">← Back</button>
+              <button class="btn-submit" onclick="goAStep(3)"><span>Next: Account Setup →</span></button>
+            </div>
+          </div>
+          <!-- astep3 -->
+          <div id="astep3" style="display:none">
+            <div class="admin-badge">🛡 Admin / Coordinator Registration</div>
+            <div class="section-label">Step 3 of 3</div>
+            <div class="section-title">Create Admin Account</div>
+            <div class="two-col">
+              <div class="full"><label class="reg-label">Email Address <span class="req">*</span></label><div class="input-wrap"><span class="icon">✉</span><input type="email" id="a_emailConfirm" placeholder="Confirm your email"/></div><div class="field-error" id="a_emailConfirmErr">Email does not match.</div></div>
+              <div><label class="reg-label">Password <span class="req">*</span></label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="a_password" placeholder="Create a strong password"/></div><div class="strength-bar"><div class="strength-fill" id="a_strengthFill"></div></div><div class="strength-text" id="a_strengthText">Enter a password</div><div class="field-error" id="a_passErr">Password must be at least 8 characters.</div></div>
+              <div><label class="reg-label">Confirm Password <span class="req">*</span></label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="a_password2" placeholder="Repeat password"/></div><div class="field-error" id="a_pass2Err">Passwords do not match.</div></div>
+            </div>
+            <hr class="form-divider"/>
+            <div style="margin-bottom:1rem">
+              <label class="terms-label"><input type="checkbox" id="a_terms" style="width:16px;height:16px;accent-color:var(--ink)"/> I agree to the <a href="#">Terms of Service</a>, <a href="#">Privacy Policy</a> and <a href="#">Admin Code of Conduct</a></label>
+              <div class="field-error" id="a_termsErr">You must agree to the terms.</div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" onclick="goAStep(2)">← Back</button>
+              <button class="btn-submit" onclick="submitAdmin()"><span>Complete Admin Registration →</span></button>
+            </div>
+          </div>
+          <!-- admin success -->
+          <div class="success-box" id="adminSuccessBox">
+            <span class="success-icon">🛡</span>
+            <div class="success-title">Admin Account Created!</div>
+            <p class="success-text">Your admin account has been registered. You can now log in to access the Admin Panel.</p>
+            <div class="success-actions">
+              <a class="btn-submit" onclick="nav('login')" style="text-decoration:none"><span>Go to Login →</span></a>
+              <a href="admin.html" class="btn-cancel">⚙ Admin Panel</a>
+              <a class="btn-cancel" onclick="nav('home')">← Home</a>
+            </div>
+          </div>
+        </div>
+      </div><!-- /adminRegForm -->
+    </div>
+  </div><!-- /page-register -->
+
+
+  <script>
+    /* ══════════════ CUSTOM CURSOR ══════════════════════════════════════════ */
+    const dot   = document.getElementById('cursor-dot');
+    const ring  = document.getElementById('cursor-ring');
+    const trail = document.getElementById('cursor-trail');
+
+    let mouseX = 0, mouseY = 0;
+    let trailX = 0, trailY = 0;
+    let rafId;
+
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      dot.style.left  = mouseX + 'px';
+      dot.style.top   = mouseY + 'px';
+      ring.style.left = mouseX + 'px';
+      ring.style.top  = mouseY + 'px';
+    });
+
+    // Smooth trailing for the ghost dot
+    function animateTrail() {
+      trailX += (mouseX - trailX) * 0.18;
+      trailY += (mouseY - trailY) * 0.18;
+      trail.style.left = trailX + 'px';
+      trail.style.top  = trailY + 'px';
+      rafId = requestAnimationFrame(animateTrail);
+    }
+    animateTrail();
+
+    // Hover detection on interactive elements
+    const hoverTargets = 'a, button, [onclick], .skill-chip, .day-chip, .event-card, .feature-item, .quick-link, .role-btn, .btn-submit, .btn-cancel, .modal-submit, .modal-close';
+    document.addEventListener('mouseover', e => {
+      if (e.target.closest(hoverTargets)) document.body.classList.add('cursor-hover');
+    });
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest(hoverTargets)) document.body.classList.remove('cursor-hover');
+    });
+
+    // Text input cursor style
+    const textTargets = 'input, textarea, select';
+    document.addEventListener('mouseover', e => {
+      if (e.target.closest(textTargets)) { document.body.classList.remove('cursor-hover'); document.body.classList.add('cursor-text'); }
+    });
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest(textTargets)) document.body.classList.remove('cursor-text');
+    });
+
+    // Click burst
+    document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
+    document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+
+    // Hide cursor when leaving window
+    document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; trail.style.opacity='0'; });
+    document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='0.6'; trail.style.opacity='1'; });
+
+
+    /* ══════════════ PAGE NAVIGATION ════════════════════════════════════════ */
+    function nav(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+
+    /* ══════════════ HOME ════════════════════════════════════════════════════ */
+    const SESSION_ROLE = 'coordinator';
+
+    function openFeedbackModal(e) {
+      if (e) e.preventDefault();
+      const modal   = document.getElementById('feedbackModal');
+      const form    = document.getElementById('feedbackFormWrap');
+      const deny    = document.getElementById('accessDenied');
+      const success = document.getElementById('feedbackSuccess');
+      success.style.display = 'none';
+      if (SESSION_ROLE === 'admin' || SESSION_ROLE === 'coordinator') {
+        form.style.display = 'block'; deny.style.display = 'none';
+      } else {
+        form.style.display = 'none'; deny.style.display = 'block';
+      }
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function submitFeedback() {
+      document.getElementById('feedbackFormWrap').style.display = 'none';
+      document.getElementById('feedbackSuccess').style.display  = 'block';
+    }
+
+    document.getElementById('feedbackModal').addEventListener('click', function(e) {
+      if (e.target === this) closeFeedbackModal();
+    });
+
+    window.addEventListener('scroll', () => {
+      const n = document.getElementById('mainNav');
+      if (n) n.style.boxShadow = window.scrollY > 10 ? '0 2px 20px rgba(15,17,23,0.08)' : 'none';
+    });
+
+    const feats = document.querySelectorAll('.feature-item');
+    const fo = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; } });
+    }, { threshold: 0.15 });
+    feats.forEach((f, i) => {
+      f.style.opacity = '0'; f.style.transform = 'translateY(18px)';
+      f.style.transition = `opacity 0.5s ease ${i*0.12}s, transform 0.5s ease ${i*0.12}s`;
+      fo.observe(f);
+    });
+
+
+    /* ══════════════ LOGIN ═══════════════════════════════════════════════════ */
+    let loginRole = 'admin';
+    const loginHints = {
+      admin: '<strong>Admin demo:</strong> admin@hub.com / admin123',
+      volunteer: '<strong>Volunteer demo:</strong> vol@hub.com / vol123'
+    };
+
+    function setRole(btn, role) {
+      loginRole = role;
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('credHint').innerHTML = loginHints[role];
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    function handleLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPassword').value.trim();
+      const err   = document.getElementById('errorMsg');
+      err.classList.remove('show');
+      if (!email || !pass) { err.textContent='⚠ Please enter both email and password.'; err.classList.add('show'); return; }
+      if (loginRole === 'admin') {
+        if (email === 'admin@hub.com' && pass === 'admin123') { window.location.href = 'admin.html'; return; }
+      } else {
+        if (email === 'vol@hub.com' && pass === 'vol123') { nav('home'); return; }
+      }
+      err.textContent = '⚠ Invalid credentials. Please check your email and password.';
+      err.classList.add('show');
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('page-login').classList.contains('active')) handleLogin();
+    });
+    ['loginEmail','loginPassword'].forEach(id =>
+      document.getElementById(id).addEventListener('input', () =>
+        document.getElementById('errorMsg').classList.remove('show'))
+    );
+
+
+    /* ══════════════ REGISTER ════════════════════════════════════════════════ */
+    let vStep = 1, aStep = 1;
+
+    function switchRegRole(role, btn) {
+      document.querySelectorAll('#page-register .role-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('volunteerForm').style.display  = role === 'volunteer' ? 'block' : 'none';
+      document.getElementById('adminRegForm').style.display   = role === 'admin'     ? 'block' : 'none';
+    }
+
+    document.querySelectorAll('.skill-chip, .day-chip').forEach(chip =>
+      chip.addEventListener('click', () => chip.classList.toggle('selected'))
+    );
+
+    document.getElementById('v_password').addEventListener('input', function() { strength(this.value,'strengthFill','strengthText'); });
+    document.getElementById('a_password').addEventListener('input', function() { strength(this.value,'a_strengthFill','a_strengthText'); });
+
+    function strength(val, fId, tId) {
+      let s = 0;
+      if (val.length >= 8) s++;
+      if (/[A-Z]/.test(val)) s++;
+      if (/[0-9]/.test(val)) s++;
+      if (/[^A-Za-z0-9]/.test(val)) s++;
+      const L = [{w:'0%',c:'#e74c3c',t:'Too short'},{w:'25%',c:'#e67e22',t:'Weak'},{w:'50%',c:'#f1c40f',t:'Fair'},{w:'75%',c:'#3498db',t:'Good'},{w:'100%',c:'#27ae60',t:'Strong ✓'}];
+      document.getElementById(fId).style.width      = L[s].w;
+      document.getElementById(fId).style.background = L[s].c;
+      document.getElementById(tId).textContent      = L[s].t;
+      document.getElementById(tId).style.color      = L[s].c;
+    }
+
+    // Volunteer steps
+    function goVStep(n) {
+      if (n===2 && !validateV1()) return;
+      if (n===3 && !validateV2()) return;
+      document.getElementById('vstep'+vStep).style.display = 'none';
+      document.getElementById('vstep'+n).style.display     = 'block';
+      updateStepUI(n, 3, 'step');
+      vStep = n;
+      if (n===3) document.getElementById('v_emailConfirm').value = document.getElementById('v_email').value;
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function validateV1() {
+      const name=document.getElementById('v_name').value.trim();
+      const phone=document.getElementById('v_phone').value.trim();
+      const email=document.getElementById('v_email').value.trim();
+      setE('nameErr',!name); setE('phoneErr',!phone); setE('emailErr',!email||!email.includes('@'));
+      return name && phone && email && email.includes('@');
+    }
+
+    function validateV2() {
+      const ok = document.querySelectorAll('#skillsGrid .skill-chip.selected').length > 0;
+      setE('skillsErr', !ok); return ok;
+    }
+
+    function submitVol() {
+      const email=document.getElementById('v_email').value.trim();
+      const ec=document.getElementById('v_emailConfirm').value.trim();
+      const p=document.getElementById('v_password').value;
+      const p2=document.getElementById('v_password2').value;
+      const t=document.getElementById('v_terms').checked;
+      let ok=true;
+      if(ec!==email){setE('emailConfirmErr',true);ok=false;}else setE('emailConfirmErr',false);
+      if(p.length<8){setE('passErr',true);ok=false;}else setE('passErr',false);
+      if(p!==p2){setE('pass2Err',true);ok=false;}else setE('pass2Err',false);
+      if(!t){setE('termsErr',true);ok=false;}else setE('termsErr',false);
+      if(!ok) return;
+      document.getElementById('vstep3').style.display='none';
+      document.getElementById('volSuccessBox').style.display='block';
+      for(let i=1;i<=3;i++){const ind=document.getElementById('step'+i+'-ind');ind.classList.remove('active');ind.classList.add('done');}
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    // Admin steps
+    function goAStep(n) {
+      if (n===2 && !validateA1()) return;
+      if (n===3 && !validateA2()) return;
+      document.getElementById('astep'+aStep).style.display = 'none';
+      document.getElementById('astep'+n).style.display     = 'block';
+      updateStepUI(n, 3, 'astep');
+      aStep = n;
+      if (n===3) document.getElementById('a_emailConfirm').value = document.getElementById('a_email').value;
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function validateA1() {
+      const name=document.getElementById('a_name').value.trim();
+      const phone=document.getElementById('a_phone').value.trim();
+      const email=document.getElementById('a_email').value.trim();
+      const desig=document.getElementById('a_designation').value.trim();
+      setE('a_nameErr',!name);setE('a_phoneErr',!phone);setE('a_emailErr',!email||!email.includes('@'));setE('a_designationErr',!desig);
+      return name && phone && email && email.includes('@') && desig;
+    }
+
+    function validateA2() {
+      const org=document.getElementById('a_org').value.trim();
+      const ot=document.getElementById('a_orgType').value;
+      const city=document.getElementById('a_city').value.trim();
+      const code=document.getElementById('a_code').value.trim();
+      setE('a_orgErr',!org);setE('a_orgTypeErr',!ot);setE('a_cityErr',!city);
+      const valid=code==='ADMHUB2025';
+      setE('a_codeErr',!valid);
+      if(!valid) document.getElementById('a_codeErr').textContent=code?'Invalid access code.':'Please enter the admin access code.';
+      return org && ot && city && valid;
+    }
+
+    function submitAdmin() {
+      const email=document.getElementById('a_email').value.trim();
+      const ec=document.getElementById('a_emailConfirm').value.trim();
+      const p=document.getElementById('a_password').value;
+      const p2=document.getElementById('a_password2').value;
+      const t=document.getElementById('a_terms').checked;
+      let ok=true;
+      if(ec!==email){setE('a_emailConfirmErr',true);ok=false;}else setE('a_emailConfirmErr',false);
+      if(p.length<8){setE('a_passErr',true);ok=false;}else setE('a_passErr',false);
+      if(p!==p2){setE('a_pass2Err',true);ok=false;}else setE('a_pass2Err',false);
+      if(!t){setE('a_termsErr',true);ok=false;}else setE('a_termsErr',false);
+      if(!ok) return;
+      document.getElementById('astep3').style.display='none';
+      document.getElementById('adminSuccessBox').style.display='block';
+      for(let i=1;i<=3;i++){const ind=document.getElementById('astep'+i+'-ind');ind.classList.remove('active');ind.classList.add('done');}
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function updateStepUI(current, total, prefix) {
+      for (let i=1; i<=total; i++) {
+        const ind = document.getElementById(prefix+i+'-ind');
+        if (!ind) continue;
+        ind.classList.remove('active','done');
+        if (i < current) ind.classList.add('done');
+        if (i === current) ind.classList.add('active');
+      }
+    }
+
+    function setE(id, show) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>
